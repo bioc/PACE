@@ -149,10 +149,14 @@ plot_stacked_bar_focal_no_resp <- function(
 
   p_zoom <- ggplot(zoom_data, aes(x = focal, y = pct_total, fill = block)) +
     geom_col(width = 0.7, position = position_dodge(width = 0.75)) +
+    # Vertical labels: dodged bars of similar height put their labels side by
+    # side at the same y, where horizontal text from neighbouring bars overlaps.
+    # Rotated, each label stays within its own bar's width.
     geom_text(aes(label = sprintf("%.2f%%", pct_total * 100)),
-              position = position_dodge(width = 0.75), vjust = -0.4, size = 2.5) +
+              position = position_dodge(width = 0.75), angle = 90,
+              hjust = -0.15, vjust = 0.5, size = 2.5) +
     scale_y_continuous(labels = scales::percent_format(accuracy = 0.1),
-                       expand = expansion(mult = c(0, 0.15))) +
+                       expand = expansion(mult = c(0, 0.28))) +
     scale_fill_manual(values = cols, breaks = keep_levels, limits = keep_levels, drop = FALSE) +
     labs(x = "Focal cell type", y = NULL, fill = "Block",
          title = "Spatial cell state & Spillover") +
@@ -217,10 +221,14 @@ plot_stacked_bar_focal <- function(
 
   p_zoom <- ggplot(zoom_data, aes(x = focal, y = pct_total, fill = block)) +
     geom_col(width = 0.7, position = position_dodge(width = 0.75)) +
+    # Vertical labels: dodged bars of similar height put their labels side by
+    # side at the same y, where horizontal text from neighbouring bars overlaps.
+    # Rotated, each label stays within its own bar's width.
     geom_text(aes(label = sprintf("%.2f%%", pct_total * 100)),
-              position = position_dodge(width = 0.75), vjust = -0.4, size = 2.5) +
+              position = position_dodge(width = 0.75), angle = 90,
+              hjust = -0.15, vjust = 0.5, size = 2.5) +
     scale_y_continuous(labels = scales::percent_format(accuracy = 0.1),
-                       expand = expansion(mult = c(0, 0.15))) +
+                       expand = expansion(mult = c(0, 0.28))) +
     scale_fill_manual(values = cols, breaks = keep_levels, limits = keep_levels, drop = FALSE) +
     labs(x = "Focal cell type", y = NULL, fill = "Block",
          title = paste(zoom_blocks, collapse = " & ")) +
