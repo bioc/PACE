@@ -19,4 +19,4 @@ OBJECTS = RcppExports.o bindings.o \
           core/irls_chunk.o core/hyperparameters.o core/gene_solve.o \
           core/dispersion.o core/preprocess.o \
           core/linear_predictor.o core/irls_driver.o \
-          core/random_design.o core/sparse_product.o bindings_random_design.o
+          core/random_design.o core/sparse_product.o core/mash.o bindings_random_design.o

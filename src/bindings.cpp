@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "core/mash.hpp"
 #include "core/count_stats.hpp"
 #include "core/core_types.hpp"
 #include "core/decomposition.hpp"
@@ -629,6 +630,72 @@ Rcpp::List pace_single_frame_shares_cpp(const Rcpp::NumericMatrix& focal_mean,
                             Rcpp::Named("SS_lineage") = ss_lineage,
                             Rcpp::Named("SS_within") = ss_within, Rcpp::Named("denom") = denom,
                             Rcpp::Named("keep") = keep);
+}
+
+// Canonical mash for one neighbour slice, end to end: covariances, grid,
+// likelihood, EM weights and posteriors (see src/core/mash.*). Reproduces
+// mashr's call sets exactly on both canonical cohorts, with no mashr dependency.
+//
+// `bhat` and `shat` are n_effects x n_conditions. Pass an empty `v` for the
+// identity, which is what `null_correlation = FALSE` means.
+// [[Rcpp::export]]
+Rcpp::List pace_mash_cpp(const Rcpp::NumericMatrix& bhat, const Rcpp::NumericMatrix& shat,
+                         const Rcpp::NumericMatrix& v, double null_weight, double grid_mult,
+                         std::int64_t max_iterations, double tolerance) {
+  const std::int64_t n_effects = bhat.nrow();
+  const std::int64_t n_conditions = bhat.ncol();
+  if (shat.nrow() != bhat.nrow() || shat.ncol() != bhat.ncol()) {
+    Rcpp::stop("bhat and shat must have the same dimensions");
+  }
+
+  std::vector<std::string> condition_names;
+  const Rcpp::List dimnames = bhat.attr("dimnames");
+  if (dimnames.size() == 2 && !Rf_isNull(dimnames[1])) {
+    const Rcpp::CharacterVector columns = dimnames[1];
+    for (R_xlen_t i = 0; i < columns.size(); ++i) condition_names.push_back(Rcpp::as<std::string>(columns[i]));
+  }
+
+  const std::vector<pace::CovarianceComponent> covariances =
+      pace::canonical_covariances(n_conditions, condition_names);
+
+  std::vector<double> grid;
+  raise_if_failed(pace::autoselect_grid(double_span(bhat), double_span(shat), n_effects,
+                                        n_conditions, grid_mult, &grid),
+                  "mash grid");
+
+  const std::int64_t n_components = pace::n_mixture_components(
+      static_cast<std::int64_t>(covariances.size()), static_cast<std::int64_t>(grid.size()), true);
+  Rcpp::NumericMatrix loglik(n_effects, n_components);
+  raise_if_failed(pace::mixture_loglik(double_span(bhat), double_span(shat), double_span(v),
+                                       n_effects, n_conditions, covariances, grid, true, 1,
+                                       out_span(loglik)),
+                  "mash likelihood");
+
+  std::vector<double> weights;
+  std::int64_t iterations = 0;
+  raise_if_failed(pace::optimize_mixture_weights(double_span(loglik), n_effects, n_components,
+                                                 null_weight, max_iterations, tolerance, &weights,
+                                                 &iterations),
+                  "mash mixture weights");
+
+  Rcpp::NumericMatrix posterior_mean(n_effects, n_conditions);
+  Rcpp::NumericMatrix posterior_sd(n_effects, n_conditions);
+  Rcpp::NumericMatrix lfsr(n_effects, n_conditions);
+  raise_if_failed(pace::posterior_summaries(double_span(bhat), double_span(shat), double_span(v),
+                                            n_effects, n_conditions, covariances, grid, true,
+                                            weights, double_span(loglik), out_span(posterior_mean),
+                                            out_span(posterior_sd), out_span(lfsr)),
+                  "mash posteriors");
+
+  posterior_mean.attr("dimnames") = bhat.attr("dimnames");
+  posterior_sd.attr("dimnames") = bhat.attr("dimnames");
+  lfsr.attr("dimnames") = bhat.attr("dimnames");
+  return Rcpp::List::create(Rcpp::Named("PosteriorMean") = posterior_mean,
+                            Rcpp::Named("PosteriorSD") = posterior_sd,
+                            Rcpp::Named("lfsr") = lfsr,
+                            Rcpp::Named("pi") = Rcpp::wrap(weights),
+                            Rcpp::Named("grid") = Rcpp::wrap(grid),
+                            Rcpp::Named("iterations") = iterations);
 }
 
 // Driver scores for one (focal, neighbour) pair (see pace::driver_scores).

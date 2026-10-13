@@ -290,6 +290,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// pace_mash_cpp
+Rcpp::List pace_mash_cpp(const Rcpp::NumericMatrix& bhat, const Rcpp::NumericMatrix& shat, const Rcpp::NumericMatrix& v, double null_weight, double grid_mult, std::int64_t max_iterations, double tolerance);
+RcppExport SEXP _PACE_pace_mash_cpp(SEXP bhatSEXP, SEXP shatSEXP, SEXP vSEXP, SEXP null_weightSEXP, SEXP grid_multSEXP, SEXP max_iterationsSEXP, SEXP toleranceSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type bhat(bhatSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type shat(shatSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type v(vSEXP);
+    Rcpp::traits::input_parameter< double >::type null_weight(null_weightSEXP);
+    Rcpp::traits::input_parameter< double >::type grid_mult(grid_multSEXP);
+    Rcpp::traits::input_parameter< std::int64_t >::type max_iterations(max_iterationsSEXP);
+    Rcpp::traits::input_parameter< double >::type tolerance(toleranceSEXP);
+    rcpp_result_gen = Rcpp::wrap(pace_mash_cpp(bhat, shat, v, null_weight, grid_mult, max_iterations, tolerance));
+    return rcpp_result_gen;
+END_RCPP
+}
 // pace_driver_scores_cpp
 Rcpp::List pace_driver_scores_cpp(const Rcpp::NumericVector& estimate_shrunk, const Rcpp::NumericVector& spec, const Rcpp::NumericVector& focal_mean, const Rcpp::NumericVector& mu_bar, const Rcpp::NumericVector& alpha, const Rcpp::NumericVector& u_raw, double var_n, double var_rn, bool has_responder);
 RcppExport SEXP _PACE_pace_driver_scores_cpp(SEXP estimate_shrunkSEXP, SEXP specSEXP, SEXP focal_meanSEXP, SEXP mu_barSEXP, SEXP alphaSEXP, SEXP u_rawSEXP, SEXP var_nSEXP, SEXP var_rnSEXP, SEXP has_responderSEXP) {
@@ -977,6 +994,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PACE_pace_decomposition_aggregates_cpp", (DL_FUNC) &_PACE_pace_decomposition_aggregates_cpp, 7},
     {"_PACE_pace_four_block_shares_cpp", (DL_FUNC) &_PACE_pace_four_block_shares_cpp, 5},
     {"_PACE_pace_single_frame_shares_cpp", (DL_FUNC) &_PACE_pace_single_frame_shares_cpp, 9},
+    {"_PACE_pace_mash_cpp", (DL_FUNC) &_PACE_pace_mash_cpp, 7},
     {"_PACE_pace_driver_scores_cpp", (DL_FUNC) &_PACE_pace_driver_scores_cpp, 9},
     {"_PACE_pace_subset_covariance_cpp", (DL_FUNC) &_PACE_pace_subset_covariance_cpp, 4},
     {"_PACE_pace_subset_column_cpp", (DL_FUNC) &_PACE_pace_subset_column_cpp, 3},
