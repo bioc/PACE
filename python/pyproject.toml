@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64", "pybind11>=2.10", "numpy"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pace-spatial"
+version = "0.0.1"
+description = "Proximity-Associated Changes in Expression: the compiled core, bound for Python"
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.21"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools]
+packages = ["pace"]
