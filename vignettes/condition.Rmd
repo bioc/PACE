@@ -180,7 +180,7 @@ it is built from:
 
 ```{r drivers-table}
 topDrivers(fit)[["Tumour_T_Cell"]]$scores |>
-  select(rank, gene, MCSD, b_clean, spec, focal_mean, lfsr) |>
+  select(rank, gene, driver_score, b_clean, spec, focal_mean, lfsr) |>
   head(8)
 ```
 

@@ -235,22 +235,22 @@ plot_stacked_bar_focal <- function(
 }
 
 ## ---------------------------------------------------------------------------
-## Per-pair MCSD driver bar + per-gene single-frame decomposition (verbatim).
+## Per-pair driver-score bar + per-gene single-frame decomposition (verbatim).
 ## ---------------------------------------------------------------------------
 make_pair_composite <- function(focus_focal, focus_neighbour, mv, sf = NULL, n_top = 5,
-                                panels = c("both", "mcsd", "gene")) {
+                                panels = c("both", "score", "gene")) {
   panels      <- match.arg(panels)
   focus_key   <- paste(focus_focal, focus_neighbour, sep = "_")
   top_drivers <- utils::head(mv$mcsd_canonical[[focus_key]]$scores, n_top)
 
-  p_mcsd <- ggplot2::ggplot(top_drivers, ggplot2::aes(MCSD, stats::reorder(gene, MCSD))) +
+  p_score <- ggplot2::ggplot(top_drivers, ggplot2::aes(driver_score, stats::reorder(gene, driver_score))) +
     ggplot2::geom_col(fill = "#F5A623", width = 0.7) +
-    ggplot2::geom_text(ggplot2::aes(label = sprintf("%.3f", MCSD)), hjust = -0.15, size = 3) +
+    ggplot2::geom_text(ggplot2::aes(label = sprintf("%.3f", driver_score)), hjust = -0.15, size = 3) +
     ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = c(0, 0.2))) +
     ggplot2::labs(x = "Driver score (spatial cell state)", y = NULL,
                   title = sprintf("%s <- %s", focus_focal, focus_neighbour)) +
     ggplot2::theme_classic(base_size = 11)
-  if (panels == "mcsd") return(p_mcsd)
+  if (panels == "score") return(p_score)
 
   if (is.null(sf)) stop("`sf` (single-frame decomposition) is required for the gene panel.")
   has_resp    <- "Responder spatial %" %in% names(sf)
@@ -281,7 +281,7 @@ make_pair_composite <- function(focus_focal, focus_neighbour, mv, sf = NULL, n_t
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
   if (panels == "gene") return(p_gene)
 
-  patchwork::wrap_plots(p_mcsd, p_gene)
+  patchwork::wrap_plots(p_score, p_gene)
 }
 
 ## ---------------------------------------------------------------------------
@@ -444,20 +444,20 @@ plotPairHeatmap <- function(object, block = c("spatial", "responder"), title = N
 #'
 #' Reproduces the manuscript per-pair driver figure: the top genes ranked by
 #' their driver score for a focal-neighbour pair, alongside their per-gene
-#' single-frame variance decomposition. The score is carried in the `MCSD`
-#' column of `topDrivers(object)` for backwards compatibility.
+#' single-frame variance decomposition. The score is carried in the
+#' `driver_score` column of `topDrivers(object)`.
 #'
 #' @param object A [PACEFit].
 #' @param focal,neighbour The focal and neighbour cell types.
 #' @param n_top Number of top genes to show.
-#' @param panels One of `"both"`, `"mcsd"`, or `"gene"`.
+#' @param panels One of `"both"`, `"score"`, or `"gene"`.
 #' @return A `patchwork` / `ggplot` object.
 #' @examples
 #' fit <- readRDS(system.file("extdata", "pace_fit_example.rds", package = "PACE"))
 #' plotDrivers(fit, "Macrophage", "Tumour")
 #' @export
 plotDrivers <- function(object, focal, neighbour, n_top = 5,
-                        panels = c("both", "mcsd", "gene")) {
+                        panels = c("both", "score", "gene")) {
   stopifnot(methods::is(object, "PACEFit"))
   mv <- .pace_mv_shim(object)
   sf <- object@varianceDecomposition$perGene

@@ -33,7 +33,7 @@
 ## Column names used inside dplyr/tidyr pipelines. Declaring them keeps
 ## `R CMD check` from reading each one as an undefined global.
 utils::globalVariables(c(
-  "Block", "Cell type %", "MCSD", "MCSD4", "R2_RxS", "R2_S", "Residual %",
+  "Block", "Cell type %", "driver_score", "driver_score_spec4", "R2_RxS", "R2_S", "Residual %",
   "Responder spatial state %", "Spatial state %", "Spillover %", "Total",
   "V_RxS", "V_S", "V_resid", "V_total", "b_clean", "block",
   "celltype_offset_sq", "delta", "drop_patient", "estimate", "estimate_shrunk",

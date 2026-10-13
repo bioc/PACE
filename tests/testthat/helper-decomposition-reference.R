@@ -195,8 +195,8 @@ reference_pace_top_drivers <- function(fit, shrunken_long, dec, types, mu_means,
     base <- s |>
       dplyr::inner_join(fm, by = "gene") |>
       dplyr::mutate(
-        MCSD    = (estimate_shrunk^2) * (spec^2) * pmax(focal_mean, 0),
-        MCSD4   = (estimate_shrunk^2) * (spec^4) * pmax(focal_mean, 0),
+        driver_score       = (estimate_shrunk^2) * (spec^2) * pmax(focal_mean, 0),
+        driver_score_spec4 = (estimate_shrunk^2) * (spec^4) * pmax(focal_mean, 0),
         mu_bar  = mu_bar_per_gene[gene],
         alpha   = alpha_g[gene],
         V_resid = log(1 + (1 + pmax(alpha, 0)) / pmax(mu_bar, 1e-6)))
@@ -208,10 +208,10 @@ reference_pace_top_drivers <- function(fit, shrunken_long, dec, types, mu_means,
                       R2_S = V_S / pmax(V_total, 1e-12))
       res <- res_all |>
         dplyr::filter(lfsr < 0.05) |>
-        dplyr::arrange(dplyr::desc(MCSD)) |>
+        dplyr::arrange(dplyr::desc(driver_score)) |>
         dplyr::mutate(rank = dplyr::row_number()) |>
         dplyr::rename(b_clean = estimate_shrunk) |>
-        dplyr::select(rank, gene, MCSD, MCSD4, b_clean, spec, focal_mean,
+        dplyr::select(rank, gene, driver_score, driver_score_spec4, b_clean, spec, focal_mean,
                       R2_S, mu_bar, alpha, V_S, V_resid, V_total, lfsr, sd_shrunk)
     } else {
       ## condition x spatial: baseline slope V_S (from the raw BLUP u) plus the
@@ -234,10 +234,10 @@ reference_pace_top_drivers <- function(fit, shrunken_long, dec, types, mu_means,
                       R2_RxS  = V_RxS / pmax(V_total, 1e-12))
       res <- res_all |>
         dplyr::filter(lfsr < 0.05) |>
-        dplyr::arrange(dplyr::desc(MCSD)) |>
+        dplyr::arrange(dplyr::desc(driver_score)) |>
         dplyr::mutate(rank = dplyr::row_number()) |>
         dplyr::rename(b_clean = estimate_shrunk) |>
-        dplyr::select(rank, gene, MCSD, MCSD4, b_clean, u_raw, spec, focal_mean,
+        dplyr::select(rank, gene, driver_score, driver_score_spec4, b_clean, u_raw, spec, focal_mean,
                       R2_S, R2_RxS, mu_bar, alpha, V_S, V_RxS, V_resid, V_total,
                       lfsr, sd_shrunk)
     }

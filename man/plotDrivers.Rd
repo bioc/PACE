@@ -9,7 +9,7 @@ plotDrivers(
   focal,
   neighbour,
   n_top = 5,
-  panels = c("both", "mcsd", "gene")
+  panels = c("both", "score", "gene")
 )
 }
 \arguments{
@@ -19,7 +19,7 @@ plotDrivers(
 
 \item{n_top}{Number of top genes to show.}
 
-\item{panels}{One of \code{"both"}, \code{"mcsd"}, or \code{"gene"}.}
+\item{panels}{One of \code{"both"}, \code{"score"}, or \code{"gene"}.}
 }
 \value{
 A \code{patchwork} / \code{ggplot} object.
@@ -27,8 +27,8 @@ A \code{patchwork} / \code{ggplot} object.
 \description{
 Reproduces the manuscript per-pair driver figure: the top genes ranked by
 their driver score for a focal-neighbour pair, alongside their per-gene
-single-frame variance decomposition. The score is carried in the \code{MCSD}
-column of \code{topDrivers(object)} for backwards compatibility.
+single-frame variance decomposition. The score is carried in the
+\code{driver_score} column of \code{topDrivers(object)}.
 }
 \examples{
 fit <- readRDS(system.file("extdata", "pace_fit_example.rds", package = "PACE"))

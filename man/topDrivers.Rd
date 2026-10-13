@@ -35,7 +35,7 @@ evidence. Both are only as well calibrated as the lfsr itself.
 On a fit with a condition, the table carries two different slopes and they
 are not a raw-and-shrunken pair of the same quantity. \code{b_clean} and \code{lfsr}
 are the condition-interaction term, the one the shrinkage was applied to, and
-the driver score \code{MCSD} is built from \code{b_clean}. \code{u_raw} is the \emph{baseline}
+the driver score is built from \code{b_clean}. \code{u_raw} is the \emph{baseline}
 slope, the unshrunken BLUP for the neighbour on its own, and it is there
 because the variance split needs it: \code{V_S} comes from \code{u_raw} and \code{V_RxS}
 from \code{b_clean}. On a fit without a condition there is no interaction to

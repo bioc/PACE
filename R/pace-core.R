@@ -15,7 +15,7 @@
 ##   pace_fit_streaming()     -- compose the above + streaming PQL fit  (THE method)
 ##   pace_shrink()            -- mash shrinkage of the neighbour slopes
 ##   pace_decompose()         -- per-gene variance decomposition (4-block)
-##   pace_top_drivers()       -- per-pair MCSD driver tables
+##   pace_top_drivers()       -- per-pair driver-score tables
 ##
 ## Generic usage -- ANY spatial dataset, no per-cohort build script:
 ##   res <- pace_fit_streaming(Y, coldata,                 # counts + cell metadata
@@ -732,8 +732,8 @@ pace_decompose <- function(fit, df, Y, types, X_fixed, resp_term = NULL,
 }
 
 ## ----------------------------------------------------------------------------
-## Reporting: per-pair MCSD driver tables.
-##   MCSD = b_shrunk^2 * spec^2 * focal_mean, filtered lfsr < 0.05, ranked desc.
+## Reporting: per-pair driver-score tables.
+##   driver_score = b_shrunk^2 * spec^2 * focal_mean, lfsr < 0.05, ranked desc.
 ## `pairs` is a list of c(focal, neighbour); resp_term = NULL gives term == nb.
 ## ----------------------------------------------------------------------------
 ## `mu_means` is the cell types x genes matrix of mean fitted means
@@ -848,8 +848,8 @@ pace_top_drivers <- function(fit, shrunken_long, dec, types, mu_means, pairs = N
     }
     base <- base |>
       dplyr::mutate(
-        MCSD    = named_by(scores$MCSD, spec, focal_mean),
-        MCSD4   = named_by(scores$MCSD4, spec, focal_mean),
+        driver_score       = named_by(scores$MCSD, spec, focal_mean),
+        driver_score_spec4 = named_by(scores$MCSD4, spec, focal_mean),
         V_resid = named_by(scores$V_resid, alpha, mu_bar),
         V_S     = if (has_resp) named_by(scores$V_S, u_raw_vec) else scores$V_S,
         V_total = named_by(scores$V_total, u_raw_vec, alpha, mu_bar),
@@ -857,10 +857,10 @@ pace_top_drivers <- function(fit, shrunken_long, dec, types, mu_means, pairs = N
     if (!has_resp) {
       res <- base |>
         dplyr::filter(lfsr < 0.05) |>
-        dplyr::arrange(dplyr::desc(MCSD)) |>
+        dplyr::arrange(dplyr::desc(driver_score)) |>
         dplyr::mutate(rank = dplyr::row_number()) |>
         dplyr::rename(b_clean = estimate_shrunk) |>
-        dplyr::select(rank, gene, MCSD, MCSD4, b_clean, spec, focal_mean,
+        dplyr::select(rank, gene, driver_score, driver_score_spec4, b_clean, spec, focal_mean,
                       R2_S, mu_bar, alpha, V_S, V_resid, V_total, lfsr, sd_shrunk)
     } else {
       base <- base |>
@@ -869,10 +869,10 @@ pace_top_drivers <- function(fit, shrunken_long, dec, types, mu_means, pairs = N
                       R2_RxS = named_by(scores$R2_RxS, u_raw_vec, alpha, mu_bar))
       res <- base |>
         dplyr::filter(lfsr < 0.05) |>
-        dplyr::arrange(dplyr::desc(MCSD)) |>
+        dplyr::arrange(dplyr::desc(driver_score)) |>
         dplyr::mutate(rank = dplyr::row_number()) |>
         dplyr::rename(b_clean = estimate_shrunk) |>
-        dplyr::select(rank, gene, MCSD, MCSD4, b_clean, u_raw, spec, focal_mean,
+        dplyr::select(rank, gene, driver_score, driver_score_spec4, b_clean, u_raw, spec, focal_mean,
                       R2_S, R2_RxS, mu_bar, alpha, V_S, V_RxS, V_resid, V_total,
                       lfsr, sd_shrunk)
     }
