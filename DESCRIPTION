@@ -1,7 +1,7 @@
 Package: PACE
 Type: Package
 Title: Proximity-Associated Changes in Expression for Spatial Transcriptomics
-Version: 0.99.12
+Version: 0.99.13
 Authors@R: c(
     person("Elijah", "Willie", email = "ewil3501@uni.sydney.edu.au",
            role = c("aut", "cre"), comment = c(ORCID = "0000-0002-5773-3649")),
@@ -21,7 +21,7 @@ Encoding: UTF-8
 biocViews: Spatial, Transcriptomics, GeneExpression, SingleCell, Regression,
     Bayesian, DifferentialExpression, Software
 Depends:
-    R (>= 4.5.0)
+    R (>= 4.6.0)
 Imports:
     methods,
     stats,

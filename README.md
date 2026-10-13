@@ -22,12 +22,16 @@ Installation
 --------
 `PACE` requires a C++ compiler (via `Rcpp`/`RcppEigen`) for the contamination-correcting solver.
 
-If you would like the most up-to-date features, install the development version from GitHub.
-```
-# install.packages("BiocManager")
-BiocManager::install("remotes")
-remotes::install_github("ecool50/PACE")
+```r
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("PACE")
 library(PACE)
+```
+
+For the development version:
+```r
+BiocManager::install("ecool50/PACE")
 ```
 
 ### Submitting an issue or feature request

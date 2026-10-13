@@ -381,8 +381,13 @@ setMethod("paceDrivers", "PACEFit", function(object, spe = NULL, pairs = NULL, .
 #' @rdname paceFit
 #' @export
 setMethod("paceFit", "SpatialExperiment", function(object, ..., pairs = NULL) {
+  ## `verbose` reaches paceModel() through `...`, but the later stages are
+  ## called positionally, so it has to be carried across by hand. Without this
+  ## the shrinkage step reported its progress even under verbose = FALSE.
+  dots <- list(...)
+  verbose <- if (is.null(dots$verbose)) TRUE else isTRUE(dots$verbose)
   fit <- paceModel(object, ...)
-  fit <- paceShrink(fit)
+  fit <- paceShrink(fit, verbose = verbose)
   fit <- paceDecompose(fit, object)
   paceDrivers(fit, object, pairs = pairs)
 })

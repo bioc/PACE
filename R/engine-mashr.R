@@ -28,12 +28,12 @@ suppressPackageStartupMessages({
 # variance and returns NaN for the WHOLE matrix. A constant column carries no
 # estimable correlation, so the estimate is taken over the conditions that vary
 # and the degenerate ones are left uncorrelated, which is the correct limit.
-.null_correlation <- function(Bhat, Shat, target_term) {
+.null_correlation <- function(Bhat, Shat, target_term, verbose = TRUE) {
   Z    <- Bhat / Shat
   sd_z <- apply(Z, 2, function(v) stats::sd(v[is.finite(v)]))
   live <- which(is.finite(sd_z) & sd_z > 0)
   if (length(live) < 2L) {
-    message("  [mashr] term '", target_term,
+    if (verbose) message("  [mashr] term '", target_term,
             "': fewer than two varying conditions, using independence")
     return(NULL)
   }
@@ -45,7 +45,7 @@ suppressPackageStartupMessages({
     isTRUE(all.equal(V_live, t(V_live), tolerance = 1e-8)) &&
     min(eigen(V_live, symmetric = TRUE, only.values = TRUE)$values) > 1e-8
   if (!usable) {
-    message("  [mashr] term '", target_term,
+    if (verbose) message("  [mashr] term '", target_term,
             "': null correlation not estimable, using independence")
     return(NULL)
   }
@@ -86,7 +86,11 @@ apply_mashr_shrinkage <- function(results, focals, neighbours,
                                    ## serial order, which is what the fixtures
                                    ## were made with; see .pace_shrink_slices()
                                    ## for what changes above 1.
-                                   shrink_threads = 1L) {
+                                   shrink_threads = 1L,
+                                   ## Progress reporting. FALSE silences both
+                                   ## this function's messages and mashr's own,
+                                   ## which it prints unconditionally otherwise.
+                                   verbose = TRUE) {
   ## data_driven=FALSE -> canonical covariances only (skip the slow cov_pca/cov_ed
   ## extreme-deconvolution step). Much faster when there are many neighbour terms
   ## (e.g. 16-type fits); shrinkage is slightly less adaptive but driver rankings
@@ -106,7 +110,7 @@ apply_mashr_shrinkage <- function(results, focals, neighbours,
       dplyr::filter(term == target_term, group == "celltype",
                     level %in% focals)
     if (nrow(sub) == 0) {
-      message("  [mashr] no ran_vals for term '", target_term, "', skipping")
+      if (verbose) message("  [mashr] no ran_vals for term '", target_term, "', skipping")
       next
     }
 
@@ -120,7 +124,7 @@ apply_mashr_shrinkage <- function(results, focals, neighbours,
     # Drop genes with NA / non-positive SE in any focal column
     cols_present <- intersect(focals, colnames(Bhat))
     if (length(cols_present) < 2) {
-      message("  [mashr] term '", target_term,
+      if (verbose) message("  [mashr] term '", target_term,
               "' has <2 focal columns, skipping")
       next
     }
@@ -141,7 +145,7 @@ apply_mashr_shrinkage <- function(results, focals, neighbours,
     ## A slice with too few usable genes is skipped on its own; letting it into
     ## the common gene set below would empty every other slice too.
     if (sum(keep) < 5) {
-      message("  [mashr] term '", target_term,
+      if (verbose) message("  [mashr] term '", target_term,
               "' has <5 well-fit genes after filter, skipping")
       next
     }
@@ -158,7 +162,7 @@ apply_mashr_shrinkage <- function(results, focals, neighbours,
   for (nb in names(slices)) {
     n_dropped <- length(setdiff(slices[[nb]]$usable_genes, common_genes))
     if (n_dropped > 0)
-      message("  [mashr] term '", slices[[nb]]$target_term, "': ", n_dropped,
+      if (verbose) message("  [mashr] term '", slices[[nb]]$target_term, "': ", n_dropped,
               " genes dropped to keep the gene set common across neighbours")
   }
 
@@ -174,7 +178,7 @@ apply_mashr_shrinkage <- function(results, focals, neighbours,
     ## mashr's likelihood matrix well-conditioned.
     Shat <- pmax(Shat, se_floor)
     if (nrow(Bhat) < 5) {
-      message("  [mashr] term '", target_term,
+      if (verbose) message("  [mashr] term '", target_term,
               "' has <5 genes common to every neighbour, skipping")
       return(NULL)
     }
@@ -185,7 +189,7 @@ apply_mashr_shrinkage <- function(results, focals, neighbours,
     ## from the effects that look null in every condition (mashr's documented
     ## two-step workflow), and fall back to independence when that estimate is
     ## not usable, which happens on slices with too few null genes.
-    V <- if (isTRUE(null_correlation)) .null_correlation(Bhat, Shat, target_term) else NULL
+    V <- if (isTRUE(null_correlation)) .null_correlation(Bhat, Shat, target_term, verbose = verbose) else NULL
     data <- if (is.null(V)) mash_set_data(Bhat, Shat)
             else mash_set_data(Bhat, Shat, V = V)
     U_c  <- cov_canonical(data)
@@ -194,22 +198,22 @@ apply_mashr_shrinkage <- function(results, focals, neighbours,
     ## break mash's likelihood-matrix check. Try canonical + ED; if it
     ## fails, fall back to canonical only.
     m <- tryCatch({
-      m_c <- mash(data, U_c)
+      m_c <- mash(data, U_c, verbose = verbose)
       top_idx <- get_significant_results(m_c)
       if (data_driven && length(top_idx) >= min_significant) {
         U_pca <- cov_pca(data, npc = min(5, length(top_idx) - 1),
                          subset = top_idx)
         U_ed  <- cov_ed(data, U_pca, subset = top_idx)
-        mash(data, c(U_c, U_ed))
+        mash(data, c(U_c, U_ed), verbose = verbose)
       } else {
         m_c
       }
     }, error = function(e) {
-      message("  [mashr] data-driven cov failed for term '", target_term,
+      if (verbose) message("  [mashr] data-driven cov failed for term '", target_term,
               "' (", conditionMessage(e), "); falling back to canonical only")
-      tryCatch(mash(data, U_c),
+      tryCatch(mash(data, U_c, verbose = verbose),
                error = function(e2) {
-                 message("  [mashr] canonical-only also failed (",
+                 if (verbose) message("  [mashr] canonical-only also failed (",
                          conditionMessage(e2), "); skipping")
                  NULL
                })
@@ -232,12 +236,12 @@ apply_mashr_shrinkage <- function(results, focals, neighbours,
       lfsr            = as.numeric(lfsr)
     )
     fsr <- expected_false_sign(as.numeric(lfsr))
-    message(sprintf("  [mashr] %s: %d genes shrunk; gene-focal calls (lfsr<0.05) = %d, expected false sign = %.1f",
+    if (verbose) message(sprintf("  [mashr] %s: %d genes shrunk; gene-focal calls (lfsr<0.05) = %d, expected false sign = %.1f",
                     target_term, nrow(Bhat), fsr$n_calls, fsr$expected_false_sign))
     result
   }
 
-  out <- .pace_shrink_slices(names(slices), shrink_one, shrink_threads)
+  out <- .pace_shrink_slices(names(slices), shrink_one, shrink_threads, verbose = verbose)
   out <- out[!vapply(out, is.null, logical(1))]
 
   if (length(out) == 0) return(.empty_shrunken_long())
@@ -265,13 +269,14 @@ apply_mashr_shrinkage <- function(results, focals, neighbours,
 # did first, but package code must not call set.seed(): it overwrites whatever
 # stream the caller had set up, and BiocCheck flags it. RNGseed is the
 # supported way to get the same determinism without touching global state.
-.pace_shrink_slices <- function(names_of_slices, shrink_one, shrink_threads) {
+.pace_shrink_slices <- function(names_of_slices, shrink_one, shrink_threads,
+                                verbose = TRUE) {
   threads <- .pace_thread_count(shrink_threads)
   if (threads == 1L || length(names_of_slices) < 2L) {
     return(stats::setNames(lapply(names_of_slices, shrink_one), names_of_slices))
   }
   if (.Platform$OS.type == "windows") {
-    message("  [mashr] shrink_threads > 1 needs a forking platform; running the slices in order")
+    if (verbose) message("  [mashr] shrink_threads > 1 needs a forking platform; running the slices in order")
     return(stats::setNames(lapply(names_of_slices, shrink_one), names_of_slices))
   }
   ## Collect once here rather than once inside every worker: the children

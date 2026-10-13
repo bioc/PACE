@@ -30,10 +30,10 @@ pre {
 
 # Installation
 
-```{r install, eval = FALSE}
-if (!require("BiocManager")) install.packages("BiocManager")
-BiocManager::install("remotes")
-remotes::install_github("ecool50/PACE")
+```r
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("PACE")
 ```
 
 # Introduction
@@ -112,20 +112,26 @@ fit
 step explicitly, which lets you inspect the fitted model and re-run the
 downstream layers (shrinkage, decomposition, drivers) without refitting:
 
-```{r staged, eval = FALSE}
-fit <- paceModel(spe, celltype_col = "cellType")   |>  # fit the mixed model
-       paceShrink()                                |>  # shrink neighbour slopes
-       paceDecompose(spe)                          |>  # variance decomposition
-       paceDrivers(spe)                                # per-pair driver scores
+```{r staged}
+staged <- paceModel(spe, celltype_col = "cellType", verbose = FALSE) |>
+          paceShrink()            |>   # shrink the neighbour slopes
+          paceDecompose(spe)      |>   # variance decomposition
+          paceDrivers(spe)             # per-pair driver scores
+
+# the same object, by either route
+all.equal(varianceDecomposition(staged), varianceDecomposition(fit))
 ```
 
 The fit-construction primitives expose the neighbourhood and contamination field
 directly, for inspection independently of a fit:
 
-```{r primitives, eval = FALSE}
+```{r primitives}
 kern <- buildNeighbourhood(spe, "cellType")   # Gaussian K_bio + technical K_tech
 W    <- ambientField(spe, "cellType")         # sparse E^tech contamination field
-anchorGenes(fit, spe)                         # per-cell-type contamination anchors
+
+vapply(kern, function(x) paste(dim(x), collapse = " x "), character(1))
+dim(W)
+head(anchorGenes(fit, spe), 3)                # per-cell-type contamination anchors
 ```
 
 # Variance decomposition
@@ -267,8 +273,10 @@ for (nm in c("mu", "technical_offset_mat", "bleed_offset_mat"))
 round(as.numeric(object.size(fit_small)) / 1e6, 1)   # MB
 ```
 
-```{r fit-save, eval = FALSE}
-saveRDS(fit_small, "fit.rds", compress = "xz")
+```{r fit-save}
+path <- file.path(tempdir(), "fit.rds")
+saveRDS(fit_small, path, compress = "xz")
+round(file.size(path) / 1e6, 1)                      # MB on disk
 ```
 
 Every readout above still works on the stripped fit, and re-decomposing it

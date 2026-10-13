@@ -694,11 +694,12 @@ pace_fit_streaming <- function(Y, df, types = NULL,
 ## ----------------------------------------------------------------------------
 ## Reporting: mash shrinkage of the neighbour slopes.
 ## ----------------------------------------------------------------------------
-pace_shrink <- function(fit, types, resp_term = NULL, shrink_threads = 1L, ...) {
+pace_shrink <- function(fit, types, resp_term = NULL, shrink_threads = 1L,
+                        verbose = TRUE, ...) {
   results_mv <- mvpql_to_results_multi(fit, keep_block = "celltype")
   apply_mashr_shrinkage(results = results_mv, focals = types,
                         neighbours = types, resp_term = resp_term,
-                        shrink_threads = shrink_threads, ...)
+                        shrink_threads = shrink_threads, verbose = verbose, ...)
 }
 
 ## ----------------------------------------------------------------------------
