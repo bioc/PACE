@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "decomposition.hpp"
 #include "mash.hpp"
 
 namespace py = pybind11;
@@ -89,6 +90,76 @@ py::dict mash(const ColumnMajor& bhat, const ColumnMajor& shat, const ColumnMajo
   return out;
 }
 
+// Driver scores for one focal-neighbour pair. Pure arithmetic over per-gene
+// vectors, so the same call backs `topDrivers()` in R. `u_raw` is only read on
+// a condition fit, where V_S comes from the unshrunken baseline BLUP and V_RxS
+// from the shrunken interaction; pass it empty otherwise.
+py::dict driver_scores(const ColumnMajor& estimate_shrunk, const ColumnMajor& spec,
+                       const ColumnMajor& focal_mean, const ColumnMajor& mu_bar,
+                       const ColumnMajor& alpha, const ColumnMajor& u_raw, double var_n,
+                       double var_rn, bool has_responder) {
+  const std::int64_t n = estimate_shrunk.size();
+  for (const auto* a : {&spec, &focal_mean, &mu_bar, &alpha}) {
+    if (a->size() != n) throw std::runtime_error("every per-gene input must have the same length");
+  }
+  if (has_responder && u_raw.size() != n) {
+    throw std::runtime_error("a condition fit needs u_raw, one value per gene");
+  }
+  ColumnMajor score(n), score4(n), v_resid(n), v_s(n), v_total(n), r2_s(n);
+  ColumnMajor v_rxs(has_responder ? n : 0), r2_rxs(has_responder ? n : 0);
+  raise_if_failed(pace::driver_scores(span_of(estimate_shrunk), span_of(spec), span_of(focal_mean),
+                                      span_of(mu_bar), span_of(alpha), span_of(u_raw), var_n,
+                                      var_rn, has_responder, n, out_span_of(score),
+                                      out_span_of(score4), out_span_of(v_resid), out_span_of(v_s),
+                                      out_span_of(v_rxs), out_span_of(v_total), out_span_of(r2_s),
+                                      out_span_of(r2_rxs)),
+                  "driver scores");
+  py::dict out;
+  out["driver_score"] = score;
+  out["driver_score_spec4"] = score4;
+  out["V_resid"] = v_resid;
+  out["V_S"] = v_s;
+  out["V_RxS"] = v_rxs;
+  out["V_total"] = v_total;
+  out["R2_S"] = r2_s;
+  out["R2_RxS"] = r2_rxs;
+  return out;
+}
+
+// Pratt attribution of a focal type's spatial variance across its neighbours.
+// `sigma` is the n_pairs x n_pairs covariance of the neighbour kernels and `u`
+// the n_pairs x n_genes slopes. This is what the pair heatmap reads.
+py::dict pair_variance_pratt(const ColumnMajor& sigma, const ColumnMajor& u) {
+  if (sigma.ndim() != 2 || sigma.shape(0) != sigma.shape(1)) {
+    throw std::runtime_error("sigma must be a square n_pairs x n_pairs matrix");
+  }
+  if (u.ndim() != 2) throw std::runtime_error("u must be n_pairs x n_genes");
+  const std::int64_t n_pairs = sigma.shape(0);
+  if (u.shape(0) != n_pairs) throw std::runtime_error("u must have one row per pair");
+  const std::int64_t n_genes = u.shape(1);
+
+  ColumnMajor v_pair(n_pairs), v_diag(n_pairs), share_pct(n_pairs), diag_pct(n_pairs), sign(n_pairs);
+  double v_total = 0.0, v_diag_total = 0.0, cross_cov_pct = 0.0;
+  int n_negative = 0;
+  raise_if_failed(pace::pair_variance_pratt(span_of(sigma), span_of(u), n_pairs, n_genes,
+                                            out_span_of(v_pair), out_span_of(v_diag),
+                                            out_span_of(share_pct), out_span_of(diag_pct),
+                                            out_span_of(sign), &v_total, &v_diag_total,
+                                            &cross_cov_pct, &n_negative),
+                  "pair variance");
+  py::dict out;
+  out["v_pair"] = v_pair;
+  out["v_diag"] = v_diag;
+  out["share_pct"] = share_pct;
+  out["diag_pct"] = diag_pct;
+  out["sign"] = sign;
+  out["v_total"] = v_total;
+  out["v_diag_total"] = v_diag_total;
+  out["cross_cov_pct"] = cross_cov_pct;
+  out["n_negative"] = n_negative;
+  return out;
+}
+
 }  // namespace
 
 PYBIND11_MODULE(_core, m) {
@@ -99,4 +170,11 @@ PYBIND11_MODULE(_core, m) {
         py::arg("tolerance") = 1e-13,
         py::arg("condition_names") = std::vector<std::string>(),
         "Canonical multivariate adaptive shrinkage for one slice.");
+  m.def("driver_scores", &driver_scores, py::arg("estimate_shrunk"), py::arg("spec"),
+        py::arg("focal_mean"), py::arg("mu_bar"), py::arg("alpha"),
+        py::arg("u_raw") = ColumnMajor(0), py::arg("var_n") = 0.0, py::arg("var_rn") = 0.0,
+        py::arg("has_responder") = false,
+        "Driver scores for one focal-neighbour pair.");
+  m.def("pair_variance_pratt", &pair_variance_pratt, py::arg("sigma"), py::arg("u"),
+        "Pratt attribution of spatial variance across a focal type's neighbours.");
 }

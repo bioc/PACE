@@ -4,6 +4,10 @@ Nothing here is a reimplementation: ../src/core/mash.cpp is compiled directly,
 so the two languages cannot drift apart. The core includes no R headers, which
 is what makes this possible.
 """
+NOTE = """macOS: build with Apple's clang, not conda's. An old ld64 produces a
+shared object that fails at import with 'mis-aligned LINKEDIT string pool',
+and the build itself reports success. See README.md."""
+
 from pathlib import Path
 
 from pybind11.setup_helpers import Pybind11Extension, build_ext
@@ -17,7 +21,13 @@ CORE = Path("..") / "src" / "core"
 ext_modules = [
     Pybind11Extension(
         "pace._core",
-        sources=["src/pace_py.cpp", str(CORE / "mash.cpp")],
+        sources=[
+            "src/pace_py.cpp",
+            str(CORE / "mash.cpp"),
+            str(CORE / "decomposition.cpp"),
+            str(CORE / "thread_pool.cpp"),
+            str(CORE / "stage_timer.cpp"),
+        ],
         include_dirs=[str(CORE)],
         cxx_std=17,
     )
