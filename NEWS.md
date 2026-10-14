@@ -1,3 +1,9 @@
+# PACE 0.99.18
+
+- Condition signals build their messages without `paste()`, and the ridge
+  check handles empty input directly rather than suppressing the warning it
+  would raise.
+
 # PACE 0.99.17
 
 - New `compactFit()` drops the per-cell matrices before saving a fit, which the

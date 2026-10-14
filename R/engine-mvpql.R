@@ -105,10 +105,10 @@ build_random_design_multi <- function(df, re_specs) {
     ## below are built from n, so a short X_terms makes sparseMatrix RECYCLE x
     ## rather than error, handing every later cell another cell's covariate.
     if (nrow(X_terms) != n) {
-      stop(sprintf(
-        paste0("re_spec '%s': model.matrix dropped %d of %d rows (NA in the ",
-               "formula variables). Remove or impute those cells before fitting."),
-        gcol, n - nrow(X_terms), n))
+      stop(sprintf("re_spec '%s': model.matrix dropped %d of %d rows ",
+                   gcol, n - nrow(X_terms), n),
+           "(NA in the formula variables). ",
+           "Remove or impute those cells before fitting.")
     }
     storage.mode(X_terms) <- "double"
     K_t_b   <- ncol(X_terms)
@@ -382,11 +382,10 @@ build_random_design_multi <- function(df, re_specs) {
   capped <- pace_tau_clamp_cpp(tau, tau_max)
   n_bind <- capped$n_binding
   if (n_bind > 0L) {
-    warning(sprintf(
-      paste0("iter %s: %d variance component(s) reached tau_max = %.4g. A binding cap ",
-             "means the term is identified only by the ridge; inspect the design rather ",
-             "than raising the cap."),
-      as.character(it), n_bind, tau_max), call. = FALSE)
+    warning(sprintf("iter %s: %d variance component(s) reached tau_max = %.4g. ",
+                    as.character(it), n_bind, tau_max),
+            "A binding cap means the term is identified only by the ridge; ",
+            "inspect the design rather than raising the cap.", call. = FALSE)
     tau <- capped$tau
     dimnames(tau) <- dimnames(capped$tau)
   }
@@ -403,9 +402,20 @@ build_random_design_multi <- function(df, re_specs) {
 # come loose. The threshold scales as 1/n, so the same model and the same
 # design lose their ridge purely by growing the cohort. Threshold (~84 float
 # ulps) follows the correctness audit's recommendation.
+## min()/max() of an all-NA or empty vector warn and return +/-Inf. That is the
+## answer we want, but suppressing the warning would also hide any other, so
+## take the empty case explicitly instead.
+.finite_min <- function(x) {
+  x <- x[is.finite(x)]
+  if (!length(x)) Inf else min(x)
+}
+.finite_max <- function(x) {
+  x <- x[is.finite(x)]
+  if (!length(x)) -Inf else max(x)
+}
+
 .ridge_needs_double <- function(lam_chk, w_chk) {
-  .ridge_needs_double_from(suppressWarnings(min(lam_chk, na.rm = TRUE)),
-                           suppressWarnings(max(colSums(w_chk, na.rm = TRUE))))
+  .ridge_needs_double_from(.finite_min(lam_chk), .finite_max(colSums(w_chk, na.rm = TRUE)))
 }
 
 # The same decision from the two statistics it reads, so a caller that builds the
