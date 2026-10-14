@@ -37,9 +37,12 @@ fails. The R package has the same requirement for the same reason.
 | `mash` | canonical multivariate adaptive shrinkage for one neighbour slice |
 | `driver_scores` | per-gene driver scores for one focal-neighbour pair |
 | `pair_variance_pratt` | Pratt attribution of spatial variance across neighbours |
+| `neighbour_kernels` | Gaussian and technical neighbour kernels from coordinates |
 
-Fitting is still R only, so you cannot yet go from a `SpatialExperiment` to a
-fit in Python. These take fitted output and summarise it.
+Fitting is still R only. `neighbour_kernels()` is its first stage and runs
+standalone, but the rest -- the design matrices, the ambient field and the
+IRLS loop -- is not bound yet, so you cannot go from an `AnnData` to a fit.
+The other three functions take fitted output and summarise it.
 
 ## Tests
 

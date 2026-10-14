@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "decomposition.hpp"
+#include "neighbourhood.hpp"
 #include "mash.hpp"
 
 namespace py = pybind11;
@@ -160,6 +161,44 @@ py::dict pair_variance_pratt(const ColumnMajor& sigma, const ColumnMajor& u) {
   return out;
 }
 
+using IntColumn = py::array_t<int, py::array::c_style | py::array::forcecast>;
+
+// Gaussian biological and exponential technical neighbour kernels, the first
+// stage of a fit. For each cell, the kernel-weighted count of every other cell
+// type within the radius.
+//
+// `cell_type` is 0-based type codes, one per cell. `group` assigns cells to
+// images; pass `per_group = true` to build the kernels within each image
+// separately, which is what a cohort of separate samples needs. `eps` is the
+// radius, defaulting to 3 * h_bio as the method specifies.
+py::dict neighbour_kernels(const ColumnMajor& x, const ColumnMajor& y,
+                           const IntColumn& cell_type, int n_types, const IntColumn& group,
+                           bool per_group, double h_bio, double h_tech, double eps,
+                           int n_threads) {
+  const std::int64_t n_cells = x.size();
+  if (y.size() != n_cells || cell_type.size() != n_cells) {
+    throw std::runtime_error("x, y and cell_type must have one entry per cell");
+  }
+  if (group.size() != n_cells) throw std::runtime_error("group must have one entry per cell");
+  if (eps <= 0.0) eps = 3.0 * h_bio;
+
+  ColumnMajor k_bio({n_cells, static_cast<std::int64_t>(n_types)});
+  ColumnMajor k_tech({n_cells, static_cast<std::int64_t>(n_types)});
+  const pace::Status status = pace::neighbour_kernels(
+      span_of(x), span_of(y),
+      pace::Span<const int>(cell_type.data(), n_cells), n_types,
+      pace::Span<const int>(group.data(), n_cells), per_group,
+      h_bio, h_tech, eps, out_span_of(k_bio), out_span_of(k_tech),
+      n_threads, pace::InterruptCheck());
+  raise_if_failed(status, "neighbour kernels");
+
+  py::dict out;
+  out["k_bio"] = k_bio;
+  out["k_tech"] = k_tech;
+  out["eps"] = eps;
+  return out;
+}
+
 }  // namespace
 
 PYBIND11_MODULE(_core, m) {
@@ -177,4 +216,9 @@ PYBIND11_MODULE(_core, m) {
         "Driver scores for one focal-neighbour pair.");
   m.def("pair_variance_pratt", &pair_variance_pratt, py::arg("sigma"), py::arg("u"),
         "Pratt attribution of spatial variance across a focal type's neighbours.");
+  m.def("neighbour_kernels", &neighbour_kernels, py::arg("x"), py::arg("y"),
+        py::arg("cell_type"), py::arg("n_types"), py::arg("group"),
+        py::arg("per_group") = false, py::arg("h_bio") = 30.0, py::arg("h_tech") = 5.0,
+        py::arg("eps") = 0.0, py::arg("n_threads") = 1,
+        "Gaussian biological and exponential technical neighbour kernels.");
 }

@@ -27,6 +27,7 @@ ext_modules = [
             str(CORE / "decomposition.cpp"),
             str(CORE / "thread_pool.cpp"),
             str(CORE / "stage_timer.cpp"),
+            str(CORE / "neighbourhood.cpp"),
         ],
         include_dirs=[str(CORE)],
         cxx_std=17,
