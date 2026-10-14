@@ -17,6 +17,7 @@
 #' @aliases PACE
 #'
 #' @useDynLib PACE, .registration = TRUE
+#' @importFrom S4Vectors metadata metadata<-
 #' @importFrom Rcpp evalCpp
 #' @import methods
 #' @import dplyr

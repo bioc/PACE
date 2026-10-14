@@ -1,3 +1,7 @@
+# PACE 0.99.19
+
+- Declares its dependency on `S4Vectors`, which `stashPACE()` uses.
+
 # PACE 0.99.18
 
 - Condition signals build their messages without `paste()`, and the ridge
