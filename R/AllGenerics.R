@@ -49,3 +49,28 @@ setGeneric("topDrivers", function(object, ...) standardGeneric("topDrivers"))
 #' @rdname pairVariance
 #' @export
 setGeneric("pairVariance", function(object, ...) standardGeneric("pairVariance"))
+
+#' @rdname cellTypes
+#' @export
+setGeneric("cellTypes", function(object, ...) standardGeneric("cellTypes"))
+
+#' @rdname paceParams
+#' @export
+setGeneric("paceParams", function(object, ...) standardGeneric("paceParams"))
+
+#' @rdname fitState
+#' @export
+setGeneric("fitState", function(object, ...) standardGeneric("fitState"))
+
+#' @rdname neighbourSlopes
+#' @export
+setGeneric("neighbourSlopes<-", function(object, value) standardGeneric("neighbourSlopes<-"))
+
+#' @rdname varianceDecomposition
+#' @export
+setGeneric("varianceDecomposition<-",
+           function(object, value) standardGeneric("varianceDecomposition<-"))
+
+#' @rdname topDrivers
+#' @export
+setGeneric("topDrivers<-", function(object, value) standardGeneric("topDrivers<-"))

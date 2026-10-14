@@ -2,17 +2,25 @@
 % Please edit documentation in R/AllGenerics.R, R/methods-PACEFit.R
 \name{neighbourSlopes}
 \alias{neighbourSlopes}
+\alias{neighbourSlopes<-}
 \alias{neighbourSlopes,PACEFit-method}
+\alias{neighbourSlopes<-,PACEFit-method}
 \title{Shrunken neighbour proximity slopes}
 \usage{
 neighbourSlopes(object, ...)
 
+neighbourSlopes(object) <- value
+
 \S4method{neighbourSlopes}{PACEFit}(object, ...)
+
+\S4method{neighbourSlopes}{PACEFit}(object) <- value
 }
 \arguments{
 \item{object}{A \link{PACEFit}.}
 
 \item{...}{Unused.}
+
+\item{value}{A data frame of shrunken proximity coefficients.}
 }
 \value{
 A data frame of shrunken slopes.

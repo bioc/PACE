@@ -2,17 +2,25 @@
 % Please edit documentation in R/AllGenerics.R, R/methods-PACEFit.R
 \name{topDrivers}
 \alias{topDrivers}
+\alias{topDrivers<-}
 \alias{topDrivers,PACEFit-method}
+\alias{topDrivers<-,PACEFit-method}
 \title{Per-pair driver tables}
 \usage{
 topDrivers(object, ...)
 
+topDrivers(object) <- value
+
 \S4method{topDrivers}{PACEFit}(object, ...)
+
+\S4method{topDrivers}{PACEFit}(object) <- value
 }
 \arguments{
 \item{object}{A \link{PACEFit}.}
 
 \item{...}{Unused.}
+
+\item{value}{A named list of per-pair driver tables, each with \code{scores}.}
 }
 \value{
 A named list with one entry per focal-neighbour pair, each a list

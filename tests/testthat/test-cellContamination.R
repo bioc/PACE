@@ -12,7 +12,13 @@ make_fit <- function(n = 40L, p = 6L, seed = 3L, percell = TRUE,
   mu_spill <- sweep(ambient, 1, rho, "*")
   mu       <- pmax(mu_bio + mu_spill, 1e-6)
 
-  fit <- list(percell_bleed_rho = if (percell) rho else NULL)
+  ## Stub solver state. These tests are about cellContamination(), not about
+  ## the fit, but a PACEFit is only valid if it carries the state the readouts
+  ## need -- so supply it rather than building an object that could not exist.
+  fit <- list(percell_bleed_rho = if (percell) rho else NULL,
+              B = matrix(0, 1, p), U = matrix(0, 2, p),
+              se_B = matrix(0, 1, p), se_U = matrix(0, 2, p),
+              alpha = rep(1, p), re_meta = list())
   ## The solvers return `contam_frac`; older fits carry the matrices instead.
   if (store == "frac")
     fit$contam_frac <- rowSums(mu_spill) / pmax(rowSums(mu), 1e-9)

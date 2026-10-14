@@ -2,17 +2,27 @@
 % Please edit documentation in R/AllGenerics.R, R/methods-PACEFit.R
 \name{varianceDecomposition}
 \alias{varianceDecomposition}
+\alias{varianceDecomposition<-}
 \alias{varianceDecomposition,PACEFit-method}
+\alias{varianceDecomposition<-,PACEFit-method}
 \title{Per-gene variance decomposition}
 \usage{
 varianceDecomposition(object, ...)
 
+varianceDecomposition(object) <- value
+
 \S4method{varianceDecomposition}{PACEFit}(object, which = c("perGene", "blocks"), ...)
+
+\S4method{varianceDecomposition}{PACEFit}(object) <- value
 }
 \arguments{
 \item{object}{A \link{PACEFit}.}
 
 \item{...}{Unused.}
+
+\item{value}{Either the per-gene table, as the getter returns by default, or
+the whole list with its \code{perGene} and \code{blocks} entries. Given a table, the
+existing \code{blocks} are kept, so that the setter inverts the getter.}
 
 \item{which}{Either \code{"perGene"} (default, the observed single-frame table) or
 \code{"blocks"} (the raw link-scale decomposition).}

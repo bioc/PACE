@@ -192,3 +192,95 @@ setMethod("cellContamination", "PACEFit", function(object, ...) {
     row.names      = NULL
   )
 })
+
+#' Cell types modelled
+#'
+#' The cell types the fit was built on, in fitting order. The order matters:
+#' it indexes the rows of the random-effect design, so the readouts and the
+#' solver state agree on what a neighbour column refers to.
+#'
+#' @param object A [PACEFit].
+#' @param ... Unused.
+#' @return A character vector of cell type names.
+#' @examples
+#' fit <- readRDS(system.file("extdata", "pace_fit_example.rds", package = "PACE"))
+#' cellTypes(fit)
+#' @rdname cellTypes
+#' @export
+setMethod("cellTypes", "PACEFit", function(object, ...) object@cellTypes)
+
+#' Fitting parameters
+#'
+#' The settings the fit actually used, rather than the ones requested: kernel
+#' bandwidths, the contamination and dispersion models, the column names read
+#' from the `SpatialExperiment`, and the condition term if there is one. Worth
+#' reading before comparing two fits, since several of these change the answer.
+#'
+#' @param object A [PACEFit].
+#' @param ... Unused.
+#' @return A named list of parameters.
+#' @examples
+#' fit <- readRDS(system.file("extdata", "pace_fit_example.rds", package = "PACE"))
+#' paceParams(fit)$h_bio
+#' @rdname paceParams
+#' @export
+setMethod("paceParams", "PACEFit", function(object, ...) object@params)
+
+#' Raw solver state
+#'
+#' The penalised quasi-likelihood solver's output: fixed and random effects and
+#' their standard errors, gene-wise overdispersions, variance components, the
+#' per-cell contamination loadings, and the convergence history.
+#'
+#' This is the fit itself rather than a readout of it, and it is exposed for
+#' inspection and diagnostics. Prefer [neighbourSlopes()],
+#' [varianceDecomposition()] and [topDrivers()] for interpretation: those apply
+#' the shrinkage and attribution the method is defined by, and the raw BLUPs
+#' here do not.
+#'
+#' @param object A [PACEFit].
+#' @param ... Unused.
+#' @return A named list of solver state.
+#' @examples
+#' fit <- readRDS(system.file("extdata", "pace_fit_example.rds", package = "PACE"))
+#' dim(fitState(fit)$U)
+#' fitState(fit)$converged
+#' @rdname fitState
+#' @export
+setMethod("fitState", "PACEFit", function(object, ...) object@fit)
+
+#' @param value A data frame of shrunken proximity coefficients.
+#' @rdname neighbourSlopes
+#' @export
+setReplaceMethod("neighbourSlopes", "PACEFit", function(object, value) {
+  object@neighbourSlopes <- as.data.frame(value)
+  validObject(object)
+  object
+})
+
+#' @param value Either the per-gene table, as the getter returns by default, or
+#'   the whole list with its `perGene` and `blocks` entries. Given a table, the
+#'   existing `blocks` are kept, so that the setter inverts the getter.
+#' @rdname varianceDecomposition
+#' @export
+setReplaceMethod("varianceDecomposition", "PACEFit", function(object, value) {
+  ## The getter hands back one component rather than the slot, so a setter that
+  ## demanded the whole list would not invert it: a round trip through
+  ## `varianceDecomposition(fit) <- varianceDecomposition(fit)` would fail.
+  object@varianceDecomposition <- if (is.data.frame(value)) {
+    utils::modifyList(object@varianceDecomposition, list(perGene = value))
+  } else {
+    as.list(value)
+  }
+  validObject(object)
+  object
+})
+
+#' @param value A named list of per-pair driver tables, each with `scores`.
+#' @rdname topDrivers
+#' @export
+setReplaceMethod("topDrivers", "PACEFit", function(object, value) {
+  object@topDrivers <- as.list(value)
+  validObject(object)
+  object
+})

@@ -52,3 +52,63 @@ setClass(
     context               = list()
   )
 )
+
+## ----------------------------------------------------------------------------
+## Validity
+## ----------------------------------------------------------------------------
+## Without this, replacing a slot wholesale passes silently and breaks every
+## readout downstream: `fit@fit <- list()` is the obvious case. The checks are
+## structural rather than numerical -- they ask whether the object can still be
+## read out, not whether the fit is any good.
+
+## The solver state every downstream layer reads. A fit missing any of these
+## cannot be shrunk, decomposed or scored.
+.pace_required_fit <- c("B", "U", "se_B", "se_U", "alpha", "re_meta")
+
+## The columns the shrinkage layer is defined by.
+.pace_required_slopes <- c("gene", "focal", "neighbour", "term",
+                           "estimate", "estimate_shrunk", "lfsr")
+
+setValidity("PACEFit", function(object) {
+  problems <- character(0)
+
+  missing_fit <- setdiff(.pace_required_fit, names(object@fit))
+  if (length(missing_fit)) {
+    problems <- c(problems, paste0(
+      "`fit` is missing the solver state the readouts need: ",
+      paste(missing_fit, collapse = ", ")))
+  }
+
+  if (!length(object@cellTypes) || anyNA(object@cellTypes)) {
+    problems <- c(problems, "`cellTypes` must name at least one cell type and cannot contain NA")
+  } else if (anyDuplicated(object@cellTypes)) {
+    problems <- c(problems, "`cellTypes` must be unique")
+  }
+
+  ## The reporting layers are empty until their stage has run, which is valid.
+  ## Once populated they have to carry what the readouts promise.
+  if (nrow(object@neighbourSlopes)) {
+    missing_cols <- setdiff(.pace_required_slopes, names(object@neighbourSlopes))
+    if (length(missing_cols)) {
+      problems <- c(problems, paste0(
+        "`neighbourSlopes` is missing columns: ", paste(missing_cols, collapse = ", ")))
+    }
+  }
+
+  if (length(object@varianceDecomposition) &&
+      !"perGene" %in% names(object@varianceDecomposition)) {
+    problems <- c(problems, "`varianceDecomposition` must contain `perGene`")
+  }
+
+  if (length(object@topDrivers)) {
+    has_scores <- vapply(object@topDrivers,
+                         function(x) is.list(x) && "scores" %in% names(x), logical(1))
+    if (!all(has_scores)) {
+      problems <- c(problems, paste0(
+        "every `topDrivers` entry needs a `scores` table; these do not: ",
+        paste(names(object@topDrivers)[!has_scores], collapse = ", ")))
+    }
+  }
+
+  if (length(problems)) problems else TRUE
+})

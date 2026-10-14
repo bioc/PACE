@@ -248,7 +248,7 @@ setMethod(
 setMethod("paceShrink", "PACEFit", function(object, ...) {
   slopes <- pace_shrink(object@fit, object@cellTypes,
                         resp_term = object@params$resp_term, ...)
-  object@neighbourSlopes <- as.data.frame(slopes)
+  neighbourSlopes(object) <- slopes
   object
 })
 
@@ -292,7 +292,7 @@ setMethod("paceDecompose", "PACEFit", function(object, spe, ...) {
                         stats = stats)
   sf  <- .pace_single_frame(Y, df, object@params$celltype_col, dec,
                             has_condition = !is.null(object@params$condition_col))
-  object@varianceDecomposition <- list(perGene = sf, blocks = dec)
+  varianceDecomposition(object) <- list(perGene = sf, blocks = dec)
   object
 })
 
@@ -352,7 +352,7 @@ setMethod("paceDrivers", "PACEFit", function(object, spe = NULL, pairs = NULL, .
       warning("topDrivers could not be computed: ", conditionMessage(e), call. = FALSE)
       list()
     })
-  object@topDrivers <- as.list(drivers)
+  topDrivers(object) <- drivers
   object
 })
 

@@ -1,3 +1,12 @@
+# PACE 0.99.14
+
+- `PACEFit` gains a validity method. Replacing a slot wholesale used to pass
+  silently and break every readout downstream; `fit@fit <- list()` is now
+  refused.
+- New accessors `cellTypes()`, `paceParams()` and `fitState()`, and validated
+  replacement methods for `neighbourSlopes()`, `varianceDecomposition()` and
+  `topDrivers()`.
+
 # PACE 0.99.13
 
 - `verbose = FALSE` is now silent. The shrinkage step reported its progress
