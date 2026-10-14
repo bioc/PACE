@@ -290,6 +290,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// pace_trigamma_cpp
+Rcpp::NumericVector pace_trigamma_cpp(const Rcpp::NumericVector& x);
+RcppExport SEXP _PACE_pace_trigamma_cpp(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(pace_trigamma_cpp(x));
+    return rcpp_result_gen;
+END_RCPP
+}
 // pace_mash_cpp
 Rcpp::List pace_mash_cpp(const Rcpp::NumericMatrix& bhat, const Rcpp::NumericMatrix& shat, const Rcpp::NumericMatrix& v, double null_weight, double grid_mult, std::int64_t max_iterations, double tolerance);
 RcppExport SEXP _PACE_pace_mash_cpp(SEXP bhatSEXP, SEXP shatSEXP, SEXP vSEXP, SEXP null_weightSEXP, SEXP grid_multSEXP, SEXP max_iterationsSEXP, SEXP toleranceSEXP) {
@@ -994,6 +1005,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PACE_pace_decomposition_aggregates_cpp", (DL_FUNC) &_PACE_pace_decomposition_aggregates_cpp, 7},
     {"_PACE_pace_four_block_shares_cpp", (DL_FUNC) &_PACE_pace_four_block_shares_cpp, 5},
     {"_PACE_pace_single_frame_shares_cpp", (DL_FUNC) &_PACE_pace_single_frame_shares_cpp, 9},
+    {"_PACE_pace_trigamma_cpp", (DL_FUNC) &_PACE_pace_trigamma_cpp, 1},
     {"_PACE_pace_mash_cpp", (DL_FUNC) &_PACE_pace_mash_cpp, 7},
     {"_PACE_pace_driver_scores_cpp", (DL_FUNC) &_PACE_pace_driver_scores_cpp, 9},
     {"_PACE_pace_subset_covariance_cpp", (DL_FUNC) &_PACE_pace_subset_covariance_cpp, 4},

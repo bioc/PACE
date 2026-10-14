@@ -65,6 +65,10 @@ pace_single_frame_shares_cpp <- function(focal_mean, within_ss, global_mean, gro
     .Call(`_PACE_pace_single_frame_shares_cpp`, focal_mean, within_ss, global_mean, group_size, v_state, v_responder, v_spill, v_disp, n_threads)
 }
 
+pace_trigamma_cpp <- function(x) {
+    .Call(`_PACE_pace_trigamma_cpp`, x)
+}
+
 pace_mash_cpp <- function(bhat, shat, v, null_weight, grid_mult, max_iterations, tolerance) {
     .Call(`_PACE_pace_mash_cpp`, bhat, shat, v, null_weight, grid_mult, max_iterations, tolerance)
 }

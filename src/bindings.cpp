@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "core/mash.hpp"
+#include "core/special.hpp"
 #include "core/count_stats.hpp"
 #include "core/core_types.hpp"
 #include "core/decomposition.hpp"
@@ -630,6 +631,14 @@ Rcpp::List pace_single_frame_shares_cpp(const Rcpp::NumericMatrix& focal_mean,
                             Rcpp::Named("SS_lineage") = ss_lineage,
                             Rcpp::Named("SS_within") = ss_within, Rcpp::Named("denom") = denom,
                             Rcpp::Named("keep") = keep);
+}
+
+// The core's own trigamma, exposed so the suite can hold it to R's.
+// [[Rcpp::export]]
+Rcpp::NumericVector pace_trigamma_cpp(const Rcpp::NumericVector& x) {
+  Rcpp::NumericVector out(x.size());
+  for (R_xlen_t i = 0; i < x.size(); ++i) out[i] = pace::trigamma(x[i]);
+  return out;
 }
 
 // Canonical mash for one neighbour slice, end to end: covariances, grid,
