@@ -250,6 +250,27 @@ contamination that would otherwise inflate tumour-marker signal in the
 macrophages, the drivers it promotes are genuine macrophage genes rather than
 tumour genes bleeding across cell boundaries.
 
+# Keeping results with the data
+
+A `PACEFit` is its own object, because a fit on a real cohort is large and
+usually outlives the session that made it. When you would rather the results
+travelled with the data, `stashPACE()` copies the readouts into
+`metadata(spe)`, leaving the solver state behind:
+
+```{r stash}
+spe <- stashPACE(spe, fit)
+names(metadata(spe)$PACE)
+```
+
+The three reporting layers are there, along with enough provenance to say which
+fit produced them. The solver state is not, which is why the stash is a
+fraction of the size of the fit:
+
+```{r stash-size}
+c(fit = object.size(fit), stashed = object.size(metadata(spe)$PACE)) |>
+  format(units = "MB")
+```
+
 # Saving a fit
 
 A fit holds the fitted means and the contamination log-offset as full

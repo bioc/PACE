@@ -1,3 +1,8 @@
+# PACE 0.99.16
+
+- New `stashPACE()` copies a fit's readouts into `metadata(spe)`, so results
+  can travel with the data they came from. The solver state is not copied.
+
 # PACE 0.99.15
 
 - Records the Australian Government Research Training Program as funder in

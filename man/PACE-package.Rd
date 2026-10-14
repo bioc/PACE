@@ -38,5 +38,10 @@ Authors:
   \item Ellis Patrick
 }
 
+Other contributors:
+\itemize{
+  \item Australian Government Research Training Program [funder]
+}
+
 }
 \keyword{internal}
