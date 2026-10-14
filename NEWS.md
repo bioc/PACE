@@ -1,3 +1,10 @@
+# PACE 0.99.17
+
+- New `compactFit()` drops the per-cell matrices before saving a fit, which the
+  vignette previously did by assigning into a slot.
+- The vignettes read fits through accessors rather than `@`, which clears
+  BiocCheck's note about slot access in examples and vignettes.
+
 # PACE 0.99.16
 
 - New `stashPACE()` copies a fit's readouts into `metadata(spe)`, so results

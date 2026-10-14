@@ -38,3 +38,23 @@ test_that("stashing takes a name, so several fits can sit side by side", {
 test_that("stashing refuses anything that is not a fit", {
   expect_error(stashPACE(spe, list()), "must be a PACEFit")
 })
+
+test_that("compacting drops the matrices and keeps the fit usable", {
+  # the packaged fit ships already compacted, so put a matrix back to have
+  # something to drop
+  fat <- fit
+  fat@fit$mu <- matrix(0, 500, 500)
+  small <- compactFit(fat)
+  expect_lt(utils::object.size(small), utils::object.size(fat))
+  expect_true(validObject(small))
+  for (nm in c("mu", "mu_bio", "mu_spill", "technical_offset_mat", "bleed_offset_mat")) {
+    expect_null(fitState(small)[[nm]])
+  }
+  # the readouts the matrices were never needed for
+  expect_identical(neighbourSlopes(small), neighbourSlopes(fit))
+  expect_identical(topDrivers(small), topDrivers(fit))
+})
+
+test_that("compacting refuses anything that is not a fit", {
+  expect_error(compactFit(list()), "must be a PACEFit")
+})

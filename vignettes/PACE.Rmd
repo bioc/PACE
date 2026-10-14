@@ -288,9 +288,7 @@ without those summaries, pass `spe` to both, and they are rebuilt exactly from
 the fit and the counts.)
 
 ```{r fit-strip}
-fit_small <- fit
-for (nm in c("mu", "technical_offset_mat", "bleed_offset_mat"))
-  fit_small@fit[[nm]] <- NULL
+fit_small <- compactFit(fit)
 round(as.numeric(object.size(fit_small)) / 1e6, 1)   # MB
 ```
 

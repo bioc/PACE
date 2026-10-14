@@ -66,3 +66,39 @@ stashPACE <- function(spe, fit, name = "PACE", overwrite = FALSE) {
   S4Vectors::metadata(spe) <- existing
   spe
 }
+
+#' Drop the per-cell matrices from a fit
+#'
+#' A fit stores the fitted means and the contamination offsets as dense cells by
+#' genes matrices. On a real cohort those dominate its size, and nothing
+#' downstream needs them kept: [paceDecompose()] and [paceDrivers()] read
+#' per-cell-type summaries the fit also holds, and rebuild the matrices from the
+#' counts when they are absent.
+#'
+#' Use this before saving a fit. Every readout still works afterwards, and
+#' re-decomposing a compacted fit reproduces the tables it already carries.
+#'
+#' @param object A [PACEFit].
+#' @param which The matrices to drop. The default is all of them.
+#'
+#' @return `object`, without the named matrices.
+#'
+#' @examples
+#' fit <- readRDS(system.file("extdata", "pace_fit_example.rds", package = "PACE"))
+#' small <- compactFit(fit)
+#' c(before = object.size(fit), after = object.size(small)) |> format(units = "MB")
+#' @seealso [stashPACE()] for keeping the readouts with the data.
+#' @export
+compactFit <- function(object,
+                       which = c("mu", "mu_bio", "mu_spill",
+                                 "technical_offset_mat", "bleed_offset_mat")) {
+  if (!methods::is(object, "PACEFit")) {
+    stop("`object` must be a PACEFit; got ", class(object)[1], ".", call. = FALSE)
+  }
+  which <- match.arg(which, several.ok = TRUE)
+  state <- object@fit
+  for (nm in which) state[[nm]] <- NULL
+  object@fit <- state
+  validObject(object)   # the solver state the readouts need must survive
+  object
+}

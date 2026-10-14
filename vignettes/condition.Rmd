@@ -82,7 +82,7 @@ fit
 The interaction term is named from the non-reference level of `condition_col`:
 
 ```{r respterm}
-fit@params$resp_term
+paceParams(fit)$resp_term
 ```
 
 so `ResponderPD:Tumour` is the extra change in expression per unit of tumour
