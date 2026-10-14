@@ -1,3 +1,8 @@
+# PACE 0.99.15
+
+- Records the Australian Government Research Training Program as funder in
+  `Authors@R`.
+
 # PACE 0.99.14
 
 - `PACEFit` gains a validity method. Replacing a slot wholesale used to pass

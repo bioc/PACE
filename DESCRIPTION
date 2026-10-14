@@ -1,13 +1,15 @@
 Package: PACE
 Type: Package
 Title: Proximity-Associated Changes in Expression for Spatial Transcriptomics
-Version: 0.99.14
+Version: 0.99.15
 Authors@R: c(
     person("Elijah", "Willie", email = "ewil3501@uni.sydney.edu.au",
            role = c("aut", "cre"), comment = c(ORCID = "0000-0002-5773-3649")),
     person("Shreya Rajesh", "Rao", role = "aut"),
     person("John", "Ormerod", role = "aut"),
-    person("Ellis", "Patrick", role = "aut"))
+    person("Ellis", "Patrick", role = "aut"),
+    person(given = "Australian Government Research Training Program",
+           role = "fnd"))
 Description: PACE (Proximity-Associated Changes in Expression) is a hierarchical
     empirical Bayes framework that quantifies how a cell's gene expression changes
     with proximity to specific neighbouring cell types in imaging-based spatial
