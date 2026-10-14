@@ -10,6 +10,7 @@ from ._core import (
     mash,
     neighbour_kernels,
     pair_variance_pratt,
+    random_design_block,
 )
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
     "pair_variance_pratt",
     "neighbour_kernels",
     "ambient_field",
+    "random_design_block",
 ]
 __version__ = "0.0.1"

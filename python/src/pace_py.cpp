@@ -15,6 +15,7 @@
 
 #include "decomposition.hpp"
 #include "neighbourhood.hpp"
+#include "random_design.hpp"
 #include "mash.hpp"
 
 namespace py = pybind11;
@@ -272,6 +273,53 @@ py::dict ambient_field(const ColumnMajor& x, const ColumnMajor& y, const IntColu
   return out;
 }
 
+// Zero a freshly allocated integer array, for the same reason out_span_of()
+// zeroes a double one.
+pace::Span<int> out_int_span(py::array_t<int>& array) {
+  int* data = array.mutable_data();
+  std::fill(data, data + array.size(), 0);
+  return pace::Span<int>(data, static_cast<std::int64_t>(array.size()));
+}
+
+// One block of the random-effect design: the cells-by-terms matrix spread
+// across groups, so column (group, term) carries that group's cells only.
+// Returned in compressed-column form, with the grouping the core computed on
+// the same pass -- `cells_by_group` holds cell indices ordered by group and
+// `group_start` indexes into it, so group g owns
+// cells_by_group[group_start[g]:group_start[g + 1]].
+py::dict random_design_block(const ColumnMajor& x_terms, const IntColumn& cell_group,
+                             int n_groups) {
+  if (x_terms.ndim() != 2) throw std::runtime_error("x_terms must be n_cells x n_terms");
+  const std::int64_t n = x_terms.shape(0);
+  const std::int64_t n_terms = x_terms.shape(1);
+  if (cell_group.size() != n) throw std::runtime_error("cell_group must have one entry per cell");
+  if (n_groups < 1) throw std::runtime_error("n_groups must be positive");
+  const std::int64_t n_columns = n_terms * static_cast<std::int64_t>(n_groups);
+  const std::int64_t nnz = n * n_terms;
+
+  py::array_t<int> column_pointer(n_columns + 1);
+  py::array_t<int> row_index(nnz);
+  ColumnMajor values(nnz);
+  py::array_t<int> cells_by_group(n);
+  py::array_t<int> group_start(static_cast<std::int64_t>(n_groups) + 1);
+
+  raise_if_failed(pace::random_design_block(
+                      span_of(x_terms), pace::Span<const int>(cell_group.data(), n), n, n_terms,
+                      n_groups, out_int_span(column_pointer), out_int_span(row_index),
+                      out_span_of(values), out_int_span(cells_by_group),
+                      out_int_span(group_start)),
+                  "random design block");
+
+  py::dict out;
+  out["data"] = values;
+  out["indices"] = row_index;
+  out["indptr"] = column_pointer;
+  out["shape"] = py::make_tuple(n, n_columns);
+  out["cells_by_group"] = cells_by_group;
+  out["group_start"] = group_start;
+  return out;
+}
+
 }  // namespace
 
 PYBIND11_MODULE(_core, m) {
@@ -298,4 +346,7 @@ PYBIND11_MODULE(_core, m) {
         py::arg("image"), py::arg("n_images"), py::arg("h_tech") = 5.0,
         py::arg("edge_correct") = true, py::arg("n_angles") = 1000, py::arg("n_threads") = 1,
         "Sparse cross-type ambient weight matrix, in compressed-column form.");
+  m.def("random_design_block", &random_design_block, py::arg("x_terms"),
+        py::arg("cell_group"), py::arg("n_groups"),
+        "One block of the random-effect design, in compressed-column form.");
 }

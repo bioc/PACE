@@ -39,10 +39,11 @@ fails. The R package has the same requirement for the same reason.
 | `pair_variance_pratt` | Pratt attribution of spatial variance across neighbours |
 | `neighbour_kernels` | Gaussian and technical neighbour kernels from coordinates |
 | `ambient_field` | sparse cross-type contamination field, compressed-column |
+| `random_design_block` | one block of the random-effect design, plus the grouping |
 
-Fitting is still R only. `neighbour_kernels()` and `ambient_field()` are its
-first two stages and run standalone, but the design matrices and the IRLS loop
-are not bound yet, so you cannot go from an `AnnData` to a fit.
+Fitting is still R only. `neighbour_kernels()`, `ambient_field()` and
+`random_design_block()` are its first stages and run standalone, but the IRLS
+loop and the orchestration around it are not bound yet, so you cannot go from an `AnnData` to a fit.
 
 `ambient_field()` returns compressed-column arrays rather than a matrix, so
 nothing here depends on scipy:

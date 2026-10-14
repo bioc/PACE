@@ -28,6 +28,7 @@ ext_modules = [
             str(CORE / "thread_pool.cpp"),
             str(CORE / "stage_timer.cpp"),
             str(CORE / "neighbourhood.cpp"),
+            str(CORE / "random_design.cpp"),
         ],
         include_dirs=[str(CORE)],
         cxx_std=17,
