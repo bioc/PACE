@@ -8,6 +8,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <algorithm>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -31,8 +32,13 @@ pace::Span<const double> span_of(const ColumnMajor& array) {
   return pace::Span<const double>(array.data(), static_cast<std::int64_t>(array.size()));
 }
 
+// Rcpp's NumericMatrix arrives zero-filled and parts of the core rely on that,
+// writing only the entries they compute. pybind11 does NOT zero a new array, so
+// zero it here -- otherwise untouched entries are whatever was on the heap.
 pace::Span<double> out_span_of(ColumnMajor& array) {
-  return pace::Span<double>(array.mutable_data(), static_cast<std::int64_t>(array.size()));
+  double* data = array.mutable_data();
+  std::fill(data, data + array.size(), 0.0);
+  return pace::Span<double>(data, static_cast<std::int64_t>(array.size()));
 }
 
 // Canonical mash for one slice, end to end. `bhat` and `shat` are
@@ -199,6 +205,73 @@ py::dict neighbour_kernels(const ColumnMajor& x, const ColumnMajor& y,
   return out;
 }
 
+// Sparse cross-type ambient weight matrix W, the contamination field:
+//
+//   W[i, j] = exp(-d_ij / h_tech) / edge_fraction[i]
+//
+// over cells i, j of the same image, different type, within 3 * h_tech.
+// Returned in compressed-column form, so
+//
+//   scipy.sparse.csc_matrix((data, indices, indptr), shape=shape)
+//
+// rebuilds it without this module depending on scipy.
+//
+// The edge correction integrates over a quadrature of `n_angles` directions,
+// which R fixes at 1000; it is built here rather than asked of the caller.
+py::dict ambient_field(const ColumnMajor& x, const ColumnMajor& y, const IntColumn& cell_type,
+                       const IntColumn& image, int n_images, double h_tech, bool edge_correct,
+                       int n_angles, int n_threads) {
+  const std::int64_t n = x.size();
+  if (y.size() != n || cell_type.size() != n || image.size() != n) {
+    throw std::runtime_error("x, y, cell_type and image must have one entry per cell");
+  }
+  if (n_angles < 1) throw std::runtime_error("n_angles must be positive");
+
+  // theta_k = 2 pi k / n_angles, matching the R quadrature exactly
+  std::vector<double> cos_theta(static_cast<std::size_t>(n_angles));
+  std::vector<double> sin_theta(static_cast<std::size_t>(n_angles));
+  const double two_pi = 6.283185307179586476925286766559;
+  for (int k = 0; k < n_angles; ++k) {
+    const double theta = two_pi * static_cast<double>(k + 1) / static_cast<double>(n_angles);
+    cos_theta[static_cast<std::size_t>(k)] = std::cos(theta);
+    sin_theta[static_cast<std::size_t>(k)] = std::sin(theta);
+  }
+
+  ColumnMajor edge_fraction(n);
+  pace::AmbientFieldBuilder builder;
+  raise_if_failed(builder.prepare(span_of(x), span_of(y),
+                                  pace::Span<const int>(cell_type.data(), n),
+                                  pace::Span<const int>(image.data(), n), n_images, h_tech,
+                                  edge_correct,
+                                  pace::Span<const double>(cos_theta.data(), n_angles),
+                                  pace::Span<const double>(sin_theta.data(), n_angles),
+                                  out_span_of(edge_fraction), n_threads, pace::InterruptCheck()),
+                  "ambient field");
+
+  const std::int64_t nnz = builder.nnz();
+  py::array_t<int> indices(nnz);
+  std::fill(indices.mutable_data(), indices.mutable_data() + nnz, 0);
+  ColumnMajor data(nnz);
+  py::array_t<std::int64_t> indptr(n + 1);
+  const std::vector<std::int64_t>& pointer = builder.column_pointer();
+  auto indptr_out = indptr.mutable_unchecked<1>();
+  for (std::int64_t j = 0; j <= n; ++j) indptr_out(j) = pointer[static_cast<std::size_t>(j)];
+
+  raise_if_failed(builder.fill(pace::Span<int>(indices.mutable_data(), nnz), out_span_of(data),
+                               pace::Span<const double>(edge_fraction.data(), n), n_threads,
+                               pace::InterruptCheck()),
+                  "ambient field");
+
+  py::dict out;
+  out["data"] = data;
+  out["indices"] = indices;
+  out["indptr"] = indptr;
+  out["shape"] = py::make_tuple(n, n);
+  out["edge_fraction"] = edge_fraction;
+  out["nnz"] = nnz;
+  return out;
+}
+
 }  // namespace
 
 PYBIND11_MODULE(_core, m) {
@@ -221,4 +294,8 @@ PYBIND11_MODULE(_core, m) {
         py::arg("per_group") = false, py::arg("h_bio") = 30.0, py::arg("h_tech") = 5.0,
         py::arg("eps") = 0.0, py::arg("n_threads") = 1,
         "Gaussian biological and exponential technical neighbour kernels.");
+  m.def("ambient_field", &ambient_field, py::arg("x"), py::arg("y"), py::arg("cell_type"),
+        py::arg("image"), py::arg("n_images"), py::arg("h_tech") = 5.0,
+        py::arg("edge_correct") = true, py::arg("n_angles") = 1000, py::arg("n_threads") = 1,
+        "Sparse cross-type ambient weight matrix, in compressed-column form.");
 }

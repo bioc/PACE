@@ -38,10 +38,20 @@ fails. The R package has the same requirement for the same reason.
 | `driver_scores` | per-gene driver scores for one focal-neighbour pair |
 | `pair_variance_pratt` | Pratt attribution of spatial variance across neighbours |
 | `neighbour_kernels` | Gaussian and technical neighbour kernels from coordinates |
+| `ambient_field` | sparse cross-type contamination field, compressed-column |
 
-Fitting is still R only. `neighbour_kernels()` is its first stage and runs
-standalone, but the rest -- the design matrices, the ambient field and the
-IRLS loop -- is not bound yet, so you cannot go from an `AnnData` to a fit.
+Fitting is still R only. `neighbour_kernels()` and `ambient_field()` are its
+first two stages and run standalone, but the design matrices and the IRLS loop
+are not bound yet, so you cannot go from an `AnnData` to a fit.
+
+`ambient_field()` returns compressed-column arrays rather than a matrix, so
+nothing here depends on scipy:
+
+```python
+from scipy.sparse import csc_matrix
+f = pace.ambient_field(x, y, cell_type, image, n_images=1)
+W = csc_matrix((f["data"], f["indices"], f["indptr"]), shape=f["shape"])
+```
 The other three functions take fitted output and summarise it.
 
 ## Tests
